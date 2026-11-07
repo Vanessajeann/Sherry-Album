@@ -1,0 +1,44 @@
+name: Build Sherry Album
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-37' 'build-tools;37.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+      - name: Tests, lint and APK
+        run: gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/SherryAlbum-0.1.0-test1.apk
+          cd dist
+          sha256sum SherryAlbum-0.1.0-test1.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SherryAlbum-0.1.0-test1
+          path: dist/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.html

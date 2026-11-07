@@ -1,0 +1,60 @@
+{
+  "scope": "static source checks only",
+  "android_compiled": false,
+  "junit_executed": false,
+  "lint_executed": false,
+  "device_tested": false,
+  "checks": [
+    {
+      "check": "All XML resources parse",
+      "passed": true,
+      "detail": "20"
+    },
+    {
+      "check": "Independent launcher identity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Internal activities are not exported",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "No Internet permission",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Independent applicationId and namespace",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Kotlin namespace consistent",
+      "passed": true,
+      "detail": "14"
+    },
+    {
+      "check": "Text is valid UTF-8 without replacement characters",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Kotlin resource references exist",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "CI has unit test, lint and build tasks",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Original license retained",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "core_sha256": "7720e0e0928094ed9d6e5f3517f503805da656312c218566dbf99af8daa15212"
+}

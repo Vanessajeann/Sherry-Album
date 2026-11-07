@@ -1,0 +1,80 @@
+<resources>
+    <string name="app_name">Sherry 相册管家</string>
+
+    <!-- Settings page -->
+    <string name="back">Back</string>
+    <string name="version_name">Version %1$s</string>
+    <string name="links_section">Links</string>
+    <string name="link_homepage">Project homepage</string>
+    <string name="link_homepage_url">github.com/SiRan-Dev/PhotoTimeFixer</string>
+    <string name="link_video_script">Video time fixer (PC)</string>
+    <string name="link_video_script_url">Download ZIP from GitHub Releases</string>
+    <string name="license_notice">License: GPL-3.0-or-later</string>
+    <string name="donate_section">Support the author</string>
+    <string name="donate_desc">If this tool helped you, buy the author a coffee</string>
+    <string name="url_homepage" translatable="false">https://github.com/SiRan-Dev/PhotoTimeFixer</string>
+    <string name="url_video_script" translatable="false">https://github.com/SiRan-Dev/PhotoTimeFixer/releases/download/v1.3/video_time_fixer.zip</string>
+
+    <!-- Layout -->
+    <string name="status_scanning">Scanning gallery…</string>
+    <string name="video_badge">Video</string>
+    <string name="rescan">Rescan</string>
+    <string name="select_all_abnormal">Select all</string>
+    <string name="cancel_select_all">Deselect all</string>
+    <string name="fix_selected">Fix selected</string>
+    <string name="thumbnail_desc">Preview image</string>
+    <string name="jump_to_abnormal">Next abnormal</string>
+    <string name="settings">Settings</string>
+    <string name="threshold_setting_title">Abnormal time threshold</string>
+
+    <!-- Fix scheme -->
+    <string name="fix_scheme_title">Fix scheme</string>
+    <string name="fix_scheme_taken">Shooting time (EXIF)</string>
+    <string name="fix_scheme_taken_desc">Use EXIF shooting time; unify shooting/modified/created times (photos with EXIF shooting time only)</string>
+    <string name="fix_scheme_filename">File name time</string>
+    <string name="fix_scheme_filename_desc">Parse time from file name, e.g. IMG_20230905_143022.jpg; unify shooting/modified/created times; fall back to shooting time when parsing fails</string>
+    <string name="exif_write_title">Unify photo EXIF times</string>
+    <string name="exif_write_desc">Write the correct time into EXIF shooting/modified/digitized fields, so the rebuilt gallery date stays correct</string>
+    <string name="rename_to_exif_title">Rename files by EXIF time</string>
+    <string name="rename_to_exif_desc">When file name time disagrees with shooting time (e.g. 8-hour offset), rename on fix; asks for confirmation first</string>
+
+    <!-- Fix confirmation -->
+    <string name="fix_confirm_title">Confirm fix</string>
+    <string name="fix_confirm_rename">Will rename %1$d files by shooting time:</string>
+    <string name="fix_confirm_exif_photo">Will unify EXIF times of %1$d photos</string>
+    <string name="fix_confirm_exif_video">Will unify container times of %1$d videos</string>
+    <string name="fix_confirm_plain">Will fix file time of %1$d items</string>
+    <string name="fix_confirm_skip">Will skip %1$d items without shooting time (no changes)</string>
+    <string name="fix_confirm_more">…and %1$d more files</string>
+    <string name="fix_confirm_ok">Confirm</string>
+    <string name="fix_confirm_cancel">Cancel</string>
+
+    <!-- Threshold options -->
+    <string name="threshold_min">1 min</string>
+    <string name="threshold_min10">10 min</string>
+    <string name="threshold_hour">1 hour</string>
+    <string name="threshold_day">1 day</string>
+
+    <!-- List & status -->
+    <string name="item_info">Taken %1$s · File %2$s</string>
+    <string name="item_info_name">Name %1$s · File %2$s</string>
+    <string name="status_result">Scanned: %1$d · abnormal: %2$d</string>
+    <string name="status_processing">Processing %1$d / %2$d…</string>
+    <string name="status_done">Done: %1$d succeeded · %2$d failed</string>
+    <string name="status_cancelled">Cancelled: %1$d succeeded · %2$d failed</string>
+    <string name="time_unknown">Unknown</string>
+
+    <!-- Toasts -->
+    <string name="toast_select_hint">Select the photos to fix first</string>
+    <string name="toast_open_fail">Can\'t open gallery</string>
+    <string name="toast_fixing">Batch fix in progress, try again later</string>
+    <string name="toast_grant_storage">Grant “All files access” permission to modify photo time</string>
+
+    <!-- First-use disclaimer -->
+    <string name="disclaimer_title">Notice before use</string>
+    <string name="disclaimer_body">Although this tool will not delete your photos, it may incorrectly modify photo-related information. Please back up all photos and videos before using this tool to avoid irreversible problems.</string>
+    <string name="disclaimer_input_hint">Type the statement above exactly</string>
+    <string name="disclaimer_ack_input">I understand the above risks, agree to use this tool, and the author is not responsible for any data issues caused by it.</string>
+    <string name="disclaimer_confirm">I understand, start using</string>
+</resources>
+

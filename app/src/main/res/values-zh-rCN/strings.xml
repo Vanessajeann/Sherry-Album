@@ -1,0 +1,78 @@
+<resources>
+    <string name="app_name">Sherry 相册管家</string>
+
+    <!-- Settings page -->
+    <string name="back">返回</string>
+    <string name="version_name">版本 %1$s</string>
+    <string name="links_section">相关链接</string>
+    <string name="link_homepage">项目主页</string>
+    <string name="link_homepage_url">github.com/SiRan-Dev/PhotoTimeFixer</string>
+    <string name="link_video_script">视频时间修复脚本（电脑端）</string>
+    <string name="link_video_script_url">从 GitHub Releases 下载 ZIP</string>
+    <string name="license_notice">许可证：GPL-3.0-or-later</string>
+    <string name="donate_section">支持作者</string>
+    <string name="donate_desc">如果这个小工具帮到了你，可以请作者喝杯咖啡</string>
+
+    <!-- Layout -->
+    <string name="status_scanning">正在扫描相册……</string>
+    <string name="video_badge">视频</string>
+    <string name="rescan">重新扫描</string>
+    <string name="select_all_abnormal">全选异常</string>
+    <string name="cancel_select_all">取消全选</string>
+    <string name="fix_selected">处理选中</string>
+    <string name="thumbnail_desc">预览图</string>
+    <string name="jump_to_abnormal">跳到异常</string>
+    <string name="settings">设置</string>
+    <string name="threshold_setting_title">异常时间阈值</string>
+
+    <!-- Fix scheme -->
+    <string name="fix_scheme_title">修复方案</string>
+    <string name="fix_scheme_taken">拍摄时间（EXIF）</string>
+    <string name="fix_scheme_taken_desc">以 EXIF 拍摄时间为准，统一拍摄/修改/创建时间（仅限 EXIF 有拍摄时间的照片）</string>
+    <string name="fix_scheme_filename">文件名时间</string>
+    <string name="fix_scheme_filename_desc">从文件名解析拍摄时间（如 IMG_20230905_143022.jpg），统一拍摄/修改/创建时间；解析失败时回退到拍摄时间</string>
+    <string name="exif_write_title">统一照片 EXIF 时间</string>
+    <string name="exif_write_desc">把正确时间写入 EXIF 拍摄/修改/数字化字段，保证修复后相册日期不再被系统还原</string>
+    <string name="rename_to_exif_title">按 EXIF 时间重命名文件名</string>
+    <string name="rename_to_exif_desc">文件名时间与拍摄时间不符时（如相差 8 小时），修复时重命名；执行前会二次确认</string>
+
+    <!-- Fix confirmation -->
+    <string name="fix_confirm_title">确认执行修复</string>
+    <string name="fix_confirm_rename">将按拍摄时间重命名 %1$d 个文件：</string>
+    <string name="fix_confirm_exif_photo">将统一 %1$d 张照片的 EXIF 时间</string>
+    <string name="fix_confirm_exif_video">将统一 %1$d 个视频的容器时间</string>
+    <string name="fix_confirm_plain">将修复 %1$d 个文件的文件时间</string>
+    <string name="fix_confirm_skip">将跳过 %1$d 个没有拍摄时间的媒体（不做任何修改）</string>
+    <string name="fix_confirm_more">…以及其他 %1$d 个文件</string>
+    <string name="fix_confirm_ok">确认执行</string>
+    <string name="fix_confirm_cancel">取消</string>
+
+    <!-- Threshold options -->
+    <string name="threshold_min">1 分钟</string>
+    <string name="threshold_min10">10 分钟</string>
+    <string name="threshold_hour">1 小时</string>
+    <string name="threshold_day">1 天</string>
+
+    <!-- List & status -->
+    <string name="item_info">拍摄 %1$s · 文件 %2$s</string>
+    <string name="item_info_name">文件名 %1$s · 文件 %2$s</string>
+    <string name="status_result">共 %1$d 张照片/视频，疑似时间异常 %2$d 个</string>
+    <string name="status_processing">正在处理 %1$d / %2$d 张……</string>
+    <string name="status_done">处理完成：成功 %1$d，失败 %2$d</string>
+    <string name="status_cancelled">已取消：成功 %1$d，失败 %2$d</string>
+    <string name="time_unknown">未知</string>
+
+    <!-- Toasts -->
+    <string name="toast_select_hint">请先勾选要处理的照片</string>
+    <string name="toast_open_fail">无法打开相册</string>
+    <string name="toast_fixing">正在批量处理，完成后再查看</string>
+    <string name="toast_grant_storage">请授予「所有文件访问权限」以修改照片时间</string>
+
+    <!-- First-use disclaimer -->
+    <string name="disclaimer_title">使用前必读</string>
+    <string name="disclaimer_body">本工具虽然不会导致照片丢失，但有可能会导致照片的相关信息被错误地修改。请在使用本工具前先备份所有照片和视频，以免出现不可逆的问题。</string>
+    <string name="disclaimer_input_hint">请逐字输入上方声明文字</string>
+    <string name="disclaimer_ack_input">我已知悉以上风险，并同意使用该工具，并且由此造成的数据问题与作者无关。</string>
+    <string name="disclaimer_confirm">我已知晓，开始使用</string>
+</resources>
+
