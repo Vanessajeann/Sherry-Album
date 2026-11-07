@@ -4,7 +4,7 @@
  */
 package io.github.vanessajeann.sherry.album
 
-import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowCompat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -77,7 +76,7 @@ internal fun glassChipColors() = FilterChipDefaults.filterChipColors(
 
 @Composable
 fun PhotoTimeFixerTheme(content: @Composable () -> Unit) {
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     SideEffect {
         activity?.window?.let { window ->
             WindowCompat.getInsetsController(window, window.decorView).apply {
