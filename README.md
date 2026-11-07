@@ -2,7 +2,7 @@
 
 独立包名 `io.github.vanessajeann.sherry.album`，在 PhotoTimeFixer 基础上新增完全重复 / 相似照片扫描、分组预览和系统回收站清理。
 
-构建、功能限制和实际验证状态见 [README-SHERRY.md](README-SHERRY.md)。当前交付为尚未编译的源码草稿。
+构建、功能限制和验证状态见 [README-SHERRY.md](README-SHERRY.md)。测试与构建结果见仓库 Actions，通过全部检查后自动发布测试版 APK。
 
 ---
 

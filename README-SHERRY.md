@@ -8,7 +8,7 @@
 - 应用名称：Sherry 相册管家
 - applicationId / namespace：`io.github.vanessajeann.sherry.album`
 - 与原版 `com.sirandev.phototimefixer` 使用不同的数据目录和安装身份，可以同时安装。
-- minSdk 24；编译 / target SDK 37。回收站清理要求 Android 11 或更高版本。
+- minSdk 24；编译 / target SDK 36。回收站清理要求 Android 11 或更高版本。
 
 ## 新增照片去重
 
@@ -35,9 +35,11 @@
 
 ## 构建
 
-所需环境跟随上游：JDK 25、Gradle 9.5.0、Android SDK 37。
+构建使用 JDK 21、Gradle 8.13、Android Gradle Plugin 8.13.0 和 Android SDK 36。
+已根据实际 CI 下载结果调整上游不可用的 SDK 37 配置，并显式启用 Kotlin Android 插件和 AndroidX。
 
-GitHub：将本目录作为独立仓库上传，内置 `.github/workflows/android.yml` 会执行单元测试、lint 和 debug APK 构建，产物在 Actions 的 `SherryAlbum-0.1.0-test1` artifact 中。
+GitHub 仓库：[Vanessajeann/Sherry-Album](https://github.com/Vanessajeann/Sherry-Album)。内置 `.github/workflows/android.yml` 执行单元测试、lint 和 debug APK 构建，产物在 Actions 的 `SherryAlbum-0.1.0-test1` artifact 中。
+`.github/workflows/release.yml` 仅在该工作流全部成功后发布测试版 APK；发布目标取产物中的 `BUILD-COMMIT.txt`，包含实际用于构建的源码提交。
 
 本地已安装 Gradle 时：
 
@@ -45,17 +47,17 @@ GitHub：将本目录作为独立仓库上传，内置 `.github/workflows/androi
 gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
 ```
 
-如使用 wrapper，先运行 `python bootstrap-wrapper.py` 恢复并校验上游二进制 wrapper，然后执行 `gradlew.bat testDebugUnitTest lintDebug assembleDebug`（Windows）或 `bash gradlew testDebugUnitTest lintDebug assembleDebug`（Linux/macOS）。
+Wrapper JAR 已从固定上游提交取得，并校验 Git blob SHA。执行 `gradlew.bat testDebugUnitTest lintDebug assembleDebug`（Windows）或 `bash gradlew testDebugUnitTest lintDebug assembleDebug`（Linux/macOS）。若 JAR 遗失，可运行 `python bootstrap-wrapper.py` 恢复。
 
-源码包中暂不含 wrapper JAR、上游捐赠照片和旧 WebP 图标；新版使用独立矢量图标，原作者捐赠入口保留为项目链接。
+新版使用独立矢量图标，原作者捐赠入口保留为项目链接。
 
-正式签名：可使用上游兼容的 `keystore/keystore.properties` 配置自己的签名。没有该文件时仍可构建 debug APK；release 为未签名包。CI 的默认 debug 签名仅适合测试，不保证不同临时 runner 生成的 APK 能直接覆盖更新，正式发布前须配置并持续使用同一签名。
+测试签名：首次 CI 在 `test-signing/` 生成并保存公开的 debug 测试密钥，后续构建复用，支持同一签名下覆盖更新。该密钥是公开的测试密钥，不能用于生产用途。正式签名可通过 `keystore/keystore.properties` 配置私有密钥；没有正式签名配置的 release 构建为未签名包。
 
 ## 验证状态
 
-本次环境没有 JDK / Android SDK，且终端无法解析公网域名，GitHub 网页未登录。因此尚未实际编译、运行 JUnit、lint 或手机安装测试。本包是实现源码草稿，不能把它当作已构建 APK 或已通过测试的成品。
+已恢复 GitHub 登录并接入云端构建。编译、JUnit 和 lint 的实际结果以仓库 Actions 为准；`SOURCE-VALIDATION.json` 仅记录最初的静态源码检查，不代表编译或真机测试。真机验证尚未完成。
 
-已准备核心算法回归测试：完全重复、哈希读取失败、颜色误判、低纹理画面、宽高比、压缩分辨率变体、相似链不传递、完全重复原子分组、选择保留保护，以及 BK 树与暴力搜索结果一致性。
+核心算法回归测试覆盖：完全重复、哈希读取失败、颜色误判、低纹理画面、宽高比、压缩分辨率变体、相似链不传递、完全重复原子分组、选择保留保护，以及 BK 树与暴力搜索结果一致性。
 
 后续需通过工作流构建，并在真机验证照片权限、部分授权、EXIF 旋转、HEIC 解码、系统回收站确认/取消、旋转屏幕与恢复流程。
 
