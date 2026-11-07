@@ -20,13 +20,17 @@ data class ScanResult(val groups: List<DuplicateGroup>, val total: Int, val skip
 class PhotoScanner(private val context: Context) {
     private val decoder = SafePhotoDecoder(context)
     private val resolver get() = context.contentResolver
-    fun query(): List<Photo> {
-        val collection = if (Build.VERSION.SDK_INT >= 29) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+    fun query(mediaType: MediaType = MediaType.PHOTO): List<Photo> {
+        val collection = if (mediaType == MediaType.VIDEO) {
+            if (Build.VERSION.SDK_INT >= 29) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else if (Build.VERSION.SDK_INT >= 29) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
             else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val fields = mutableListOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.SIZE, MediaStore.Images.Media.WIDTH, MediaStore.Images.Media.HEIGHT,
             MediaStore.Images.Media.DATE_MODIFIED, MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.MIME_TYPE, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+        if (mediaType == MediaType.VIDEO) fields.add(MediaStore.Video.Media.DURATION)
         if (Build.VERSION.SDK_INT >= 29) fields.add(MediaStore.Images.Media.RELATIVE_PATH)
         if (Build.VERSION.SDK_INT >= 30) fields.add(MediaStore.Images.Media.GENERATION_MODIFIED)
         val selection = buildList {
@@ -46,17 +50,19 @@ class PhotoScanner(private val context: Context) {
                         num(MediaStore.Images.Media.DATE_MODIFIED), num(MediaStore.Images.Media.DATE_TAKEN),
                         str(MediaStore.Images.Media.MIME_TYPE),
                         if (Build.VERSION.SDK_INT >= 29) str(MediaStore.Images.Media.RELATIVE_PATH) else str(MediaStore.Images.Media.BUCKET_DISPLAY_NAME),
-                        if (Build.VERSION.SDK_INT >= 30) num(MediaStore.Images.Media.GENERATION_MODIFIED) else 0))
+                        if (Build.VERSION.SDK_INT >= 30) num(MediaStore.Images.Media.GENERATION_MODIFIED) else 0,
+                        isVideo = mediaType == MediaType.VIDEO,
+                        durationMillis = if (mediaType == MediaType.VIDEO) num(MediaStore.Video.Media.DURATION) else 0))
                 }
             }
         } ?: throw IOException("无法读取系统相册，请检查照片权限")
     }
 
-    suspend fun scan(mode: ScanMode, sensitivity: Sensitivity, onProgress: suspend (ScanProgress) -> Unit): ScanResult {
+    suspend fun scan(mode: ScanMode, sensitivity: Sensitivity, mediaType: MediaType = MediaType.PHOTO, onProgress: suspend (ScanProgress) -> Unit): ScanResult {
         val cancellation = currentCoroutineContext()
         onProgress(ScanProgress("读取相册"))
         ScanDiagnostics.stage(context, "query", 0, 0)
-        val photos = query()
+        val photos = query(mediaType)
         val repeatedSizes = photos.groupingBy { it.bytes }.eachCount().filterValues { it > 1 }.keys
         val analyzed = mutableListOf<AnalyzedPhoto>()
         val skipped = mutableSetOf<String>()
@@ -71,7 +77,7 @@ class PhotoScanner(private val context: Context) {
             }
             analyzed.add(AnalyzedPhoto(photo, digest, null))
         }
-        val withVisual = if (mode == ScanMode.SIMILAR) {
+        val withVisual = if (mode == ScanMode.SIMILAR && mediaType == MediaType.PHOTO) {
             // Decode only one representative of each byte-identical atom.
             val representatives = analyzed.groupBy { it.sha256 ?: it.photo.uri }.values
             val updated = mutableListOf<AnalyzedPhoto>()
@@ -100,7 +106,7 @@ class PhotoScanner(private val context: Context) {
         cancellation.ensureActive()
         onProgress(ScanProgress("整理重复分组"))
         ScanDiagnostics.stage(context, "group", withVisual.size, withVisual.size)
-        val groups = DuplicateCore.group(withVisual, mode, sensitivity) { cancellation.ensureActive() }
+        val groups = DuplicateCore.group(withVisual, if (mediaType == MediaType.VIDEO) ScanMode.EXACT else mode, sensitivity) { cancellation.ensureActive() }
         ScanDiagnostics.stage(context, "complete", photos.size, photos.size)
         return ScanResult(groups, photos.size, skipped.size)
     }
@@ -117,7 +123,7 @@ class PhotoScanner(private val context: Context) {
                 if (n < 0) break
                 digest.update(buffer, 0, n); count += n
             }
-        } ?: throw IOException("照片无法读取")
+        } ?: throw IOException("文件无法读取")
         if (count != photo.bytes) throw IOException("扫描期间文件发生变化")
         return digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
     }

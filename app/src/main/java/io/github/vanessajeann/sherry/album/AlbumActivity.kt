@@ -4,6 +4,7 @@ package io.github.vanessajeann.sherry.album
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.ContentUris
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -12,6 +13,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
 import android.text.format.Formatter
+import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
@@ -47,7 +49,7 @@ import kotlinx.coroutines.launch
 class AlbumActivity : ComponentActivity() {
     private val model: DuplicateViewModel by viewModels()
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (hasPhotoAccess()) model.scan() else model.showMessage("尚未获得照片访问权限。可在应用设置中授权后重新扫描。")
+        if (hasMediaAccess()) model.scan() else model.showMessage("尚未获得媒体访问权限。可在应用设置中授权后重新扫描。")
     }
     private val trashLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
         model.completeBatch(it.resultCode == Activity.RESULT_OK)
@@ -58,23 +60,30 @@ class AlbumActivity : ComponentActivity() {
         setContent { PhotoTimeFixerTheme { AlbumScreen() } }
     }
 
-    private fun hasPhotoAccess(): Boolean = if (Build.VERSION.SDK_INT >= 33) {
-        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+    private fun mediaPermission(): String = if (model.mediaType == MediaType.VIDEO)
+        Manifest.permission.READ_MEDIA_VIDEO else Manifest.permission.READ_MEDIA_IMAGES
+
+    private fun hasMediaAccess(): Boolean = if (Build.VERSION.SDK_INT >= 33) {
+        ContextCompat.checkSelfPermission(this, mediaPermission()) == PackageManager.PERMISSION_GRANTED ||
             (Build.VERSION.SDK_INT >= 34 && ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED)
     } else ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
 
     private fun scanWithPermission() {
-        if (hasPhotoAccess()) model.scan()
-        else permissionLauncher.launch(if (Build.VERSION.SDK_INT >= 34) arrayOf(Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33)
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
+        val full = if (Build.VERSION.SDK_INT >= 33)
+            ContextCompat.checkSelfPermission(this, mediaPermission()) == PackageManager.PERMISSION_GRANTED
+        else hasMediaAccess()
+        if (full) model.scan()
+        else permissionLauncher.launch(if (Build.VERSION.SDK_INT >= 34)
+            arrayOf(mediaPermission(), Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+            else if (Build.VERSION.SDK_INT >= 33) arrayOf(mediaPermission())
+            else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
     }
 
     private fun gallery(photo: Photo) {
-        try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(photo.uri), photo.mime)
+        try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(photo.uri), photo.mime.ifBlank { if (photo.isVideo) "video/*" else "image/*" })
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
-        catch (_: Exception) { model.showMessage("无法打开照片，请确认相册应用和访问权限") }
+        catch (_: Exception) { model.showMessage("无法打开文件，请确认相册应用和访问权限") }
     }
     private fun size(bytes: Long) = Formatter.formatFileSize(this, bytes)
 
@@ -113,7 +122,7 @@ class AlbumActivity : ComponentActivity() {
                 Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Sherry 相册管家", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        Text("照片去重 · 时间修复", style = MaterialTheme.typography.bodySmall,
+                        Text("照片和视频去重 · 时间修复", style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     TextButton(enabled = model.canChange, onClick = {
@@ -125,7 +134,14 @@ class AlbumActivity : ComponentActivity() {
                     item {
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("照片去重", style = MaterialTheme.typography.titleMedium)
+                                Text("选择媒体", style = MaterialTheme.typography.titleMedium)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChip(selected = model.mediaType == MediaType.PHOTO, enabled = model.canChange,
+                                        onClick = { model.configureMedia(MediaType.PHOTO); filter = "全部" }, label = { Text("照片去重") })
+                                    FilterChip(selected = model.mediaType == MediaType.VIDEO, enabled = model.canChange,
+                                        onClick = { model.configureMedia(MediaType.VIDEO); filter = "全部" }, label = { Text("视频去重") })
+                                }
+                                if (model.mediaType == MediaType.PHOTO) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     FilterChip(selected = model.mode == ScanMode.EXACT, enabled = model.canChange,
                                         onClick = { model.configure(ScanMode.EXACT, model.sensitivity) }, label = { Text("完全重复") })
@@ -145,6 +161,10 @@ class AlbumActivity : ComponentActivity() {
                                 }
                                 Text("本机分析，不上传照片。完全重复按文件内容核对；相似照片可能包含连拍、压缩版或不同瞬间，请逐组预览。",
                                     style = MaterialTheme.typography.bodySmall)
+                                } else {
+                                    Text("本机按完整文件内容查找完全相同的视频；压缩或重新编码后的视频不会匹配。请预览确认后再清理。",
+                                        style = MaterialTheme.typography.bodySmall)
+                                }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(onClick = { scanWithPermission() }, enabled = model.canChange) {
                                         Text(if (model.scanned) "重新扫描" else "开始扫描")
@@ -155,12 +175,12 @@ class AlbumActivity : ComponentActivity() {
                         }
                     }
                     item {
-                        val partial = Build.VERSION.SDK_INT >= 34 && hasPhotoAccess() &&
-                            ContextCompat.checkSelfPermission(this@AlbumActivity, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED
+                        val partial = Build.VERSION.SDK_INT >= 34 && hasMediaAccess() &&
+                            ContextCompat.checkSelfPermission(this@AlbumActivity, mediaPermission()) != PackageManager.PERMISSION_GRANTED
                         if (partial) {
-                            Text("当前仅能扫描你授权的部分照片。可在应用设置中允许访问全部照片。", style = MaterialTheme.typography.bodySmall)
+                            Text("当前仅能扫描你授权的部分媒体。可在应用设置中允许访问全部媒体。", style = MaterialTheme.typography.bodySmall)
                             TextButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.parse("package:$packageName"))) }) { Text("照片权限设置") }
+                                Uri.parse("package:$packageName"))) }) { Text("媒体权限设置") }
                         }
                         if (model.busy) ScanProgressIndicator(progressSnapshot)
                         if (model.message.isNotBlank()) Text(model.message, style = MaterialTheme.typography.bodySmall,
@@ -170,7 +190,7 @@ class AlbumActivity : ComponentActivity() {
                     if (model.groups.isNotEmpty()) {
                         item {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("全部", "完全重复", "相似照片").forEach { option ->
+                                (if (model.mediaType == MediaType.VIDEO) listOf("全部", "完全重复") else listOf("全部", "完全重复", "相似照片")).forEach { option ->
                                     FilterChip(selected = filter == option, onClick = { filter = option }, label = { Text(option) })
                                 }
                             }
@@ -188,7 +208,7 @@ class AlbumActivity : ComponentActivity() {
                             }
                         }
                     } else if (model.scanned) item {
-                        Text("没有发现符合当前条件的重复照片。你可以尝试相似扫描或调整识别强度。", Modifier.padding(vertical = 24.dp))
+                        Text(if (model.mediaType == MediaType.VIDEO) "没有发现完全相同的视频。" else "没有发现符合当前条件的重复照片。你可以尝试相似扫描或调整识别强度。", Modifier.padding(vertical = 24.dp))
                     }
                     item {
                         Text("基于 SiRan-Dev / PhotoTimeFixer，遵循 GPL-3.0-or-later。相似识别为本应用实现，未使用 Apple 或爱思的私有算法。",
@@ -200,18 +220,18 @@ class AlbumActivity : ComponentActivity() {
                 HorizontalDivider()
                 Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("已选 ${model.selected.size} 张 · ${size(model.selectedBytes)}", style = MaterialTheme.typography.titleSmall)
-                        Text("每组至少保留一张", style = MaterialTheme.typography.bodySmall)
+                        Text("已选 ${model.selected.size} 个 · ${size(model.selectedBytes)}", style = MaterialTheme.typography.titleSmall)
+                        Text("每组至少保留一个", style = MaterialTheme.typography.bodySmall)
                     }
                     Button(enabled = model.canChange && model.selected.isNotEmpty(), onClick = {
-                        if (Build.VERSION.SDK_INT < 30) model.showMessage("Android 11 以下请点开照片，在系统相册中手动清理；本应用不直接永久删除照片")
+                        if (Build.VERSION.SDK_INT < 30) model.showMessage("Android 11 以下请点开文件，在系统相册中手动清理；本应用不直接永久删除文件")
                         else confirm = true
                     }) { Text(if (model.plan != null) "等待系统确认" else "移入回收站") }
                 }
             }
         }
-        if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("清理所选照片？") },
-            text = { Text("将 ${model.selected.size} 张照片（${size(model.selectedBytes)}）交给系统移入回收站。\n\n每组至少保留一张。相似照片请先核对细节、动态内容与拍摄瞬间。系统会再次确认；超过 200 张时分批处理。回收站保留期限由系统相册决定，期间未必立即释放空间。") },
+        if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("清理所选文件？") },
+            text = { Text("将 ${model.selected.size} 个文件（${size(model.selectedBytes)}）交给系统移入回收站。\n\n每组至少保留一个。相似照片请先核对细节、动态内容与拍摄瞬间。系统会再次确认；超过 200 个时分批处理。回收站保留期限由系统相册决定，期间未必立即释放空间。") },
             confirmButton = { TextButton(onClick = { confirm = false; model.prepareTrash() }) { Text("核对并继续") } },
             dismissButton = { TextButton(onClick = { confirm = false }) { Text("返回检查") } })
     }
@@ -220,9 +240,9 @@ class AlbumActivity : ComponentActivity() {
     private fun GroupHeader(group: DuplicateGroup) {
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${if (group.kind == GroupKind.EXACT) "完全重复" else "相似照片 · 请预览"} · ${group.photos.size} 张",
+                Text("${if (group.kind == GroupKind.EXACT) "完全重复" else "相似照片 · 请预览"} · ${group.photos.size} ${if (group.photos.first().isVideo) "段" else "张"}",
                     style = MaterialTheme.typography.titleMedium)
-                Text("推荐保留第一张：优先分辨率、文件大小，再比较拍摄日期。", style = MaterialTheme.typography.bodySmall)
+                Text(if (group.photos.first().isVideo) "推荐保留第一个文件；请点开预览并核对。" else "推荐保留第一张：优先分辨率、文件大小，再比较拍摄日期。", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -235,12 +255,12 @@ class AlbumActivity : ComponentActivity() {
                         PhotoThumbnail(photo)
                         Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                             Text(photo.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
-                            Text("${photo.width} × ${photo.height} · ${size(photo.bytes)}", style = MaterialTheme.typography.bodySmall)
+                            Text("${photo.width} × ${photo.height} · ${size(photo.bytes)}" + if (photo.isVideo && photo.durationMillis > 0) " · ${photo.durationMillis / 1000}秒" else "", style = MaterialTheme.typography.bodySmall)
                             Text(photo.folder, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(if (photo.uri in model.selected) "待清理" else if (i == 0) "推荐保留" else "保留",
                                     color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
-                                TextButton(enabled = model.canChange, onClick = { model.retain(group, photo.uri) }) { Text("只保留这张") }
+                                TextButton(enabled = model.canChange, onClick = { model.retain(group, photo.uri) }) { Text(if (photo.isVideo) "只保留这段" else "只保留这张") }
                             }
                         }
                         Checkbox(checked = photo.uri in model.selected, enabled = model.canChange,
@@ -253,13 +273,21 @@ class AlbumActivity : ComponentActivity() {
     @Composable
     private fun PhotoThumbnail(photo: Photo) {
         val bitmap by produceState<Bitmap?>(null, photo.uri, photo.modified) {
-            value = withContext(Dispatchers.IO) { PhotoScanner(this@AlbumActivity).decode(photo.uri, 160) }
+            value = withContext(Dispatchers.IO) {
+                if (photo.isVideo) ImageReadGuard.read {
+                    if (Build.VERSION.SDK_INT >= 29) contentResolver.loadThumbnail(Uri.parse(photo.uri), Size(160, 160), null)
+                    else @Suppress("DEPRECATION") MediaStore.Video.Thumbnails.getThumbnail(contentResolver,
+                        ContentUris.parseId(Uri.parse(photo.uri)), MediaStore.Video.Thumbnails.MINI_KIND, null)
+                } else PhotoScanner(this@AlbumActivity).decode(photo.uri, 160)
+            }
         }
         Box(Modifier.size(76.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable { gallery(photo) }, contentAlignment = Alignment.Center) {
             val image = bitmap
             if (image == null) Text("预览") else Image(image.asImageBitmap(), contentDescription = "预览 ${photo.name}",
                 modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            if (photo.isVideo) Text("▶", color = androidx.compose.ui.graphics.Color.White,
+                modifier = Modifier.background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f)).padding(4.dp))
         }
     }
 }

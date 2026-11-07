@@ -23,6 +23,7 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
     private val scanner = PhotoScanner(application)
     var groups by mutableStateOf<List<DuplicateGroup>>(emptyList()); private set
     var selected by mutableStateOf<Set<String>>(emptySet()); private set
+    var mediaType by mutableStateOf(MediaType.PHOTO); private set
     var mode by mutableStateOf(ScanMode.SIMILAR); private set
     var sensitivity by mutableStateOf(Sensitivity.BALANCED); private set
     var progress by mutableStateOf(ScanProgress("选择扫描方式，开始整理相册")); private set
@@ -35,6 +36,13 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
     private var validationJob: Job? = null
     val canChange: Boolean get() = !busy && plan == null
     val selectedBytes: Long get() = groups.flatMap { it.photos }.filter { it.uri in selected }.sumOf { it.bytes }
+
+    fun configureMedia(newType: MediaType) {
+        if (!canChange || mediaType == newType) return
+        mediaType = newType
+        groups = emptyList(); selected = emptySet(); scanned = false
+        message = "媒体类型已改变，请重新扫描"
+    }
 
     fun configure(newMode: ScanMode, newSensitivity: Sensitivity) {
         if (!canChange) return
@@ -51,12 +59,12 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
         scanJob = viewModelScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    scanner.scan(mode, sensitivity) { p -> withContext(Dispatchers.Main) { progress = p } }
+                    scanner.scan(mode, sensitivity, mediaType) { p -> withContext(Dispatchers.Main) { progress = p } }
                 }
                 groups = result.groups
                 scanned = true
-                message = "已扫描 ${result.total} 张照片，发现 ${groups.size} 组。无法读取或不支持画面分析：${result.skipped} 张。"
-                progress = ScanProgress(if (groups.isEmpty()) "没有发现重复照片" else "扫描完成")
+                message = if (mediaType == MediaType.VIDEO) "已扫描 ${result.total} 段视频，发现 ${groups.size} 组。无法读取：${result.skipped} 段。" else "已扫描 ${result.total} 张照片，发现 ${groups.size} 组。无法读取或不支持画面分析：${result.skipped} 张。"
+                progress = ScanProgress(if (groups.isEmpty()) "没有发现重复文件" else "扫描完成")
             } catch (e: CancellationException) {
                 message = "扫描已停止，未修改任何照片"
                 throw e
@@ -90,16 +98,16 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
         validationJob = viewModelScope.launch {
             try {
                 val photos = withContext(Dispatchers.IO) {
-                    val current = scanner.query().associateBy { it.uri }
+                    val current = scanner.query(mediaType).associateBy { it.uri }
                     val targets = mutableListOf<Photo>()
                     for (group in snapshot.filter { g -> g.photos.any { it.uri in selection } }) {
                         val relevant = group.photos
                         // Revalidate every member, including the keeper, before handing control to the system.
                         require(relevant.all { old -> current[old.uri]?.let {
                             it.bytes == old.bytes && it.modified == old.modified && it.generation == old.generation
-                        } == true }) { "照片已被移动、修改或删除，请重新扫描" }
+                        } == true }) { "文件已被移动、修改或删除，请重新扫描" }
                         val keeper = relevant.firstOrNull { it.uri !in selection }
-                            ?: error("每组至少需要保留一张照片")
+                            ?: error("每组至少需要保留一个文件")
                         if (group.kind == GroupKind.EXACT) {
                             val hash = scanner.sha256(current.getValue(keeper.uri))
                             relevant.filter { it.uri in selection }.forEach { target ->
@@ -112,7 +120,7 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                     targets
                 }
-                require(photos.isNotEmpty()) { "没有可清理的照片" }
+                require(photos.isNotEmpty()) { "没有可清理的文件" }
                 plan = TrashPlan(photos.chunked(200))
             } catch (e: CancellationException) { message = "核对已取消，未发起系统清理请求"; throw e }
             catch (e: Exception) { message = e.localizedMessage ?: "核对失败，请重新扫描" }
@@ -130,7 +138,7 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
         val active = plan ?: run { message = "操作已结束，请重新扫描确认相册状态"; return }
         if (!approved) {
             plan = null
-            message = "已取消后续清理；此前已移入回收站 ${active.completed} 张"
+            message = "已取消后续清理；此前已移入回收站 ${active.completed} 个文件"
             return
         }
         busy = true
@@ -141,7 +149,7 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
                     batch.filter { photo ->
                         try {
                             getApplication<Application>().contentResolver.query(Uri.parse(photo.uri),
-                                arrayOf(MediaStore.Images.Media.IS_TRASHED), Bundle().apply {
+                                arrayOf(MediaStore.MediaColumns.IS_TRASHED), Bundle().apply {
                                     putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
                                 }, null)?.use { c ->
                                 c.moveToFirst() && c.getInt(0) == 1
@@ -155,12 +163,12 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
                 val completed = active.completed + trashed.size
                 if (trashed.size != batch.size) {
                     plan = null
-                    message = "已确认移入回收站 $completed 张，部分结果无法确认，请重新扫描"
+                    message = "已确认移入回收站 $completed 个文件，部分结果无法确认，请重新扫描"
                 } else if (active.batchIndex + 1 < active.batches.size) {
                     plan = active.copy(completed = completed, batchIndex = active.batchIndex + 1)
                 } else {
                     plan = null
-                    message = "已将 $completed 张照片移入系统回收站，可在系统相册中查看或恢复"
+                    message = "已将 $completed 个文件移入系统回收站，可在系统相册中查看或恢复"
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

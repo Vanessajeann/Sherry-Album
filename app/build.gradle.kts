@@ -22,8 +22,8 @@ android {
         applicationId = "io.github.vanessajeann.sherry.album"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1.0-test3"
+        versionCode = 4
+        versionName = "0.1.0-test4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

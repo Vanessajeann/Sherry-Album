@@ -12,6 +12,8 @@ data class Photo(
     val width: Int, val height: Int, val modified: Long,
     val taken: Long, val mime: String, val folder: String,
     val generation: Long = 0,
+    val isVideo: Boolean = false,
+    val durationMillis: Long = 0,
 ) {
     val pixels: Long get() = width.toLong() * height
 }
@@ -22,6 +24,7 @@ enum class GroupKind { EXACT, SIMILAR }
 data class DuplicateGroup(val id: String, val kind: GroupKind, val photos: List<Photo>) {
     val keeper: Photo get() = photos.first()
 }
+enum class MediaType { PHOTO, VIDEO }
 enum class ScanMode { EXACT, SIMILAR }
 enum class Sensitivity(val radius: Int, val difference: Int, val colorError: Double) {
     STRICT(4, 6, 0.045), BALANCED(7, 10, 0.065), LOOSE(10, 14, 0.085)
