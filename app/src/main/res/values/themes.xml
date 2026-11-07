@@ -46,7 +46,6 @@
              - windowLightNavigationBar=true 同理作用于底部手势条（minSdk 24 下属性会被系统忽略则无副作用）
              night 模式在 values-night/themes.xml 中反之。-->
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
     </style>
 
     <style name="Theme.PhotoTimeFixer" parent="Base.Theme.PhotoTimeFixer" />

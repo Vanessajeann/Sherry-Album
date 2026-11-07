@@ -7,6 +7,5 @@
     -->
     <style name="Theme.PhotoTimeFixer" parent="Base.Theme.PhotoTimeFixer">
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>
