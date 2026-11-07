@@ -1,0 +1,29 @@
+name: Publish tested APK
+
+on:
+  workflow_run:
+    workflows: ['Build Sherry Album']
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: gh run download "$RUN_ID" --name SherryAlbum-0.1.0-test1 --dir dist
+      - name: Publish test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -s dist/BUILD-COMMIT.txt
+          gh release create v0.1.0-test1 dist/SherryAlbum-0.1.0-test1.apk dist/SHA256SUMS.txt dist/BUILD-COMMIT.txt --target "$(cat dist/BUILD-COMMIT.txt)" --title 'Sherry 相册管家 0.1.0-test1' --prerelease --notes-file RELEASE-NOTES.md

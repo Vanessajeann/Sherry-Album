@@ -29,6 +29,15 @@ android {
     }
 
     signingConfigs {
+        getByName("debug") {
+            val testKey = rootProject.file("test-signing/sherry-test.jks")
+            if (testKey.exists()) {
+                storeFile = testKey
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
         if (keystoreProps.getProperty("storeFile") != null) create("release") {
             storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
             storePassword = keystoreProps.getProperty("storePassword")
