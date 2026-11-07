@@ -19,6 +19,7 @@
 package io.github.vanessajeann.sherry.album
 
 import android.Manifest
+import io.github.vanessajeann.sherry.album.duplicate.ScanProgress
 import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -797,6 +798,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MainScreen() {
+        val fixFractionSnapshot = ScanProgress("", fixProgressDone, fixProgressTotal).fraction
         val listState = rememberLazyListState()
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
@@ -844,7 +846,7 @@ class MainActivity : ComponentActivity() {
                 )
 
                 // 批量修复进度条 + 取消
-                if (fixing && fixProgressTotal > 0) {
+                if (fixing && fixFractionSnapshot != null) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -852,7 +854,7 @@ class MainActivity : ComponentActivity() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         LinearProgressIndicator(
-                            progress = { fixProgressDone.toFloat() / fixProgressTotal },
+                            progress = { fixFractionSnapshot },
                             modifier = Modifier
                                 .weight(1f)
                         )

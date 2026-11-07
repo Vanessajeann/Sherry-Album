@@ -22,8 +22,8 @@ android {
         applicationId = "io.github.vanessajeann.sherry.album"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.0-test2"
+        versionCode = 3
+        versionName = "0.1.0-test3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -81,5 +81,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 

@@ -1,5 +1,12 @@
 # Changes from PhotoTimeFixer
 
+## 0.1.0-test3
+
+- Fix the confirmed Compose progress-semantics crash when mutable totals reset to zero between composition and semantics evaluation.
+- Capture immutable, bounded progress fractions; use indeterminate progress for unknown totals.
+- Cover rapid visual/group/completion transitions in actual Compose UI tests, including semantics access before recomposition.
+- Apply the same snapshot rule to time-repair progress and retain exception messages in diagnostics.
+
 ## 0.1.0-test2
 
 - Bound software image decode dimensions and share a single decoder slot with thumbnails.

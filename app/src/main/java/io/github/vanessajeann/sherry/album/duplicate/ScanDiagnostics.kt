@@ -20,7 +20,7 @@ object ScanDiagnostics {
     }
 
     @Synchronized fun imageFailure(context: Context, stage: String, error: Throwable) {
-        val signature = "$stage: ${error.javaClass.simpleName}"
+        val signature = "$stage: ${error.javaClass.simpleName}: ${error.message.orEmpty().take(300)}"
         // Do not grow logs for thousands of identical corrupt-file errors.
         if (signature == lastFailure) return
         lastFailure = signature

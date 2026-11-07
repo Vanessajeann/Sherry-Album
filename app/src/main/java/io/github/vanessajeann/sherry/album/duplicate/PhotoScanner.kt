@@ -15,7 +15,6 @@ import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import java.security.MessageDigest
 
-data class ScanProgress(val stage: String, val done: Int = 0, val total: Int = 0)
 data class ScanResult(val groups: List<DuplicateGroup>, val total: Int, val skipped: Int)
 
 class PhotoScanner(private val context: Context) {

@@ -94,6 +94,7 @@ class AlbumActivity : ComponentActivity() {
 
     @Composable
     private fun AlbumScreen() {
+        val progressSnapshot = model.progress
         var confirm by rememberSaveable { mutableStateOf(false) }
         var filter by rememberSaveable { mutableStateOf("全部") }
         val active = model.plan
@@ -161,12 +162,7 @@ class AlbumActivity : ComponentActivity() {
                             TextButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                 Uri.parse("package:$packageName"))) }) { Text("照片权限设置") }
                         }
-                        if (model.busy) {
-                            Text("${model.progress.stage}  ${if (model.progress.total > 0) "${model.progress.done}/${model.progress.total}" else ""}")
-                            if (model.progress.total > 0) LinearProgressIndicator(
-                                progress = { model.progress.done.toFloat() / model.progress.total }, modifier = Modifier.fillMaxWidth())
-                            else LinearProgressIndicator(Modifier.fillMaxWidth())
-                        }
+                        if (model.busy) ScanProgressIndicator(progressSnapshot)
                         if (model.message.isNotBlank()) Text(model.message, style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(vertical = 8.dp))
                         if (!model.busy) TextButton(onClick = { exportDiagnostics() }) { Text("导出诊断") }

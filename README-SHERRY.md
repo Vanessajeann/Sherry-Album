@@ -1,6 +1,6 @@
-# Sherry 相册管家 0.1.0-test2
+# Sherry 相册管家 0.1.0-test3
 
-本次版本针对画面分析阶段的图片解码/内存异常增加防护。没有用户手机堆栈时，不把候选原因当作已证实根因。完整变更和复测范围见 `RELEASE-NOTES.md`。
+本次版本根据用户堆栈修复阶段切换时进度值变为 NaN、导致 Compose 主线程退出的问题；进度条使用不可变快照，并补充真实界面回归。完整变更和复测范围见 `RELEASE-NOTES.md`。
 应用内“导出诊断”可获取本应用错误记录和 Android 的历史退出原因；报告仅在用户选择导出时生成，不含图片内容，不自动发送。
 
 基于 [SiRan-Dev/PhotoTimeFixer](https://github.com/SiRan-Dev/PhotoTimeFixer) 的 Android 二次开发版本。
@@ -41,7 +41,7 @@
 构建使用 JDK 21、Gradle 8.13、Android Gradle Plugin 8.13.0 和 Android SDK 36。
 已根据实际 CI 下载结果调整上游不可用的 SDK 37 配置，并显式启用 Kotlin Android 插件和 AndroidX。
 
-GitHub 仓库：[Vanessajeann/Sherry-Album](https://github.com/Vanessajeann/Sherry-Album)。内置 `.github/workflows/android.yml` 执行单元测试、lint 和 debug APK 构建，产物在 Actions 的 `SherryAlbum-0.1.0-test1` artifact 中。
+GitHub 仓库：[Vanessajeann/Sherry-Album](https://github.com/Vanessajeann/Sherry-Album)。内置 `.github/workflows/android.yml` 执行单元测试、lint 和 debug APK 构建，产物在 Actions 的 `SherryAlbum-0.1.0-test3` artifact 中。
 `.github/workflows/release.yml` 仅在该工作流全部成功后发布测试版 APK；发布目标取产物中的 `BUILD-COMMIT.txt`，包含实际用于构建的源码提交。
 
 本地已安装 Gradle 时：

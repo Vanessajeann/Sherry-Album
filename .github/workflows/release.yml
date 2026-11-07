@@ -20,10 +20,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
-        run: gh run download "$RUN_ID" --name SherryAlbum-0.1.0-test2 --dir dist
+        run: gh run download "$RUN_ID" --name SherryAlbum-0.1.0-test3 --dir dist
       - name: Publish test release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test -s dist/BUILD-COMMIT.txt
-          gh release create v0.1.0-test2 dist/SherryAlbum-0.1.0-test2.apk dist/SHA256SUMS.txt dist/BUILD-COMMIT.txt --target "$(cat dist/BUILD-COMMIT.txt)" --title 'Sherry 相册管家 0.1.0-test2 · 画面分析闪退防护' --prerelease --notes-file RELEASE-NOTES.md
+          gh release create v0.1.0-test3 dist/SherryAlbum-0.1.0-test3.apk dist/SHA256SUMS.txt dist/BUILD-COMMIT.txt --target "$(cat dist/BUILD-COMMIT.txt)" --title 'Sherry 相册管家 0.1.0-test3 · 修复扫描阶段切换闪退' --prerelease --notes-file RELEASE-NOTES.md
