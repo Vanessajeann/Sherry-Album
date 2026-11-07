@@ -16,7 +16,7 @@ data class Photo(
     val pixels: Long get() = width.toLong() * height
 }
 
-data class Fingerprint(val phash: Long, val dhash: Long, val colors: FloatArray, val variance: Double)
+data class Fingerprint(val phash: Long, val dhash: Long, val colors: ByteArray, val variance: Double)
 data class AnalyzedPhoto(val photo: Photo, val sha256: String?, val fingerprint: Fingerprint?)
 enum class GroupKind { EXACT, SIMILAR }
 data class DuplicateGroup(val id: String, val kind: GroupKind, val photos: List<Photo>) {
@@ -77,7 +77,7 @@ object DuplicateCore {
         if (java.lang.Long.bitCount(x.phash xor y.phash) > s.radius ||
             java.lang.Long.bitCount(x.dhash xor y.dhash) > s.difference) return false
         val error = sqrt(x.colors.indices.sumOf { i ->
-            val diff = (x.colors[i] - y.colors[i]).toDouble(); diff * diff
+            val diff = ((x.colors[i].toInt() and 255) - (y.colors[i].toInt() and 255)) / 255.0; diff * diff
         } / x.colors.size)
         return error <= s.colorError
     }
@@ -105,14 +105,15 @@ object DuplicateCore {
             val row = (y * 4 + 2) * 32
             if (luma[row + x * 3 + 2] > luma[row + (x + 1) * 3 + 2]) dhash = dhash or (1L shl (y * 8 + x))
         }
-        val colors = FloatArray(8 * 8 * 3)
+        val sums = IntArray(8 * 8 * 3)
         for (y in 0..31) for (x in 0..31) {
             val cell = ((y / 4) * 8 + x / 4) * 3
             val c = pixels[y * 32 + x]
-            colors[cell] += (c shr 16 and 255) / (255f * 16)
-            colors[cell + 1] += (c shr 8 and 255) / (255f * 16)
-            colors[cell + 2] += (c and 255) / (255f * 16)
+            sums[cell] += c shr 16 and 255
+            sums[cell + 1] += c shr 8 and 255
+            sums[cell + 2] += c and 255
         }
+        val colors = ByteArray(sums.size) { ((sums[it] + 8) / 16).toByte() }
         return Fingerprint(phash, dhash, colors, variance)
     }
     private val cosine = Array(8) { u -> DoubleArray(32) { x -> cos((2 * x + 1) * u * Math.PI / 64) } }

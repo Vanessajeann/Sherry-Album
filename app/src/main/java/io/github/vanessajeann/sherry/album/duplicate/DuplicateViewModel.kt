@@ -61,7 +61,12 @@ class DuplicateViewModel(application: Application) : AndroidViewModel(applicatio
                 message = "扫描已停止，未修改任何照片"
                 throw e
             } catch (e: Exception) {
+                ImageReadGuard.read { ScanDiagnostics.imageFailure(getApplication<Application>(), "scan", e) }
                 message = "扫描失败：${e.localizedMessage ?: "请检查权限后重试"}"
+            } catch (e: OutOfMemoryError) {
+                groups = emptyList(); selected = emptySet()
+                ImageReadGuard.read { ScanDiagnostics.imageFailure(getApplication<Application>(), "scan-memory", e) }
+                message = "内存不足，扫描已安全停止，未修改照片。请导出诊断，或先使用完全重复模式。"
             } finally { busy = false; scanJob = null }
         }
     }

@@ -10,7 +10,7 @@ class DuplicateCoreTest {
                      height: Int = 1000, bytes: Long = 1000) = AnalyzedPhoto(
         Photo(id, "$id.jpg", bytes, width, height, 100, 100, "image/jpeg", "DCIM/"), hash, fp)
     private fun fp(hash: Long, color: Float = 0.5f, variance: Double = 0.05) =
-        Fingerprint(hash, 0, FloatArray(192) { color }, variance)
+        Fingerprint(hash, 0, ByteArray(192) { (color * 255).toInt().toByte() }, variance)
 
     @Test fun renamedIdenticalFilesAreExact() {
         val result = DuplicateCore.group(listOf(item("A", "same"), item("B", "same"), item("C", "other")),

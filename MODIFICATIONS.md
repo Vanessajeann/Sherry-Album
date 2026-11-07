@@ -1,5 +1,13 @@
 # Changes from PhotoTimeFixer
 
+## 0.1.0-test2
+
+- Bound software image decode dimensions and share a single decoder slot with thumbnails.
+- Catch per-image runtime/heap failures while retaining scan cancellation; release temporary bitmaps on failure.
+- Store compact byte color fingerprints instead of floating-point arrays.
+- Add app-private scan diagnostics and historical process exit information, exported only by user action.
+- Add emulator regression for the real image decoder and MediaStore visual pipeline, including corrupt and very large fixtures.
+
 Date: 2026-11-07
 
 Upstream: SiRan-Dev/PhotoTimeFixer, commit 15948a12185e3ac8a27671a8c3512a094f734dd7.

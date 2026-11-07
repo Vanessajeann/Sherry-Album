@@ -37,9 +37,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
 import io.github.vanessajeann.sherry.album.duplicate.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 class AlbumActivity : ComponentActivity() {
     private val model: DuplicateViewModel by viewModels()
@@ -74,6 +77,20 @@ class AlbumActivity : ComponentActivity() {
         catch (_: Exception) { model.showMessage("无法打开照片，请确认相册应用和访问权限") }
     }
     private fun size(bytes: Long) = Formatter.formatFileSize(this, bytes)
+
+    private fun exportDiagnostics() {
+        lifecycleScope.launch {
+            try {
+                val report = withContext(Dispatchers.IO) { ScanDiagnostics.report(this@AlbumActivity) }
+                val uri = FileProvider.getUriForFile(this@AlbumActivity, "$packageName.diagnostics", report)
+                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }, "导出去重诊断"))
+            } catch (_: Exception) { model.showMessage("诊断导出失败，请重试") }
+        }
+    }
 
     @Composable
     private fun AlbumScreen() {
@@ -152,6 +169,7 @@ class AlbumActivity : ComponentActivity() {
                         }
                         if (model.message.isNotBlank()) Text(model.message, style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(vertical = 8.dp))
+                        if (!model.busy) TextButton(onClick = { exportDiagnostics() }) { Text("导出诊断") }
                     }
                     if (model.groups.isNotEmpty()) {
                         item {

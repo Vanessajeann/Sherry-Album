@@ -4,16 +4,14 @@ package io.github.vanessajeann.sherry.album.duplicate
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import java.security.MessageDigest
 
@@ -21,6 +19,7 @@ data class ScanProgress(val stage: String, val done: Int = 0, val total: Int = 0
 data class ScanResult(val groups: List<DuplicateGroup>, val total: Int, val skipped: Int)
 
 class PhotoScanner(private val context: Context) {
+    private val decoder = SafePhotoDecoder(context)
     private val resolver get() = context.contentResolver
     fun query(): List<Photo> {
         val collection = if (Build.VERSION.SDK_INT >= 29) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
@@ -57,6 +56,7 @@ class PhotoScanner(private val context: Context) {
     suspend fun scan(mode: ScanMode, sensitivity: Sensitivity, onProgress: suspend (ScanProgress) -> Unit): ScanResult {
         val cancellation = currentCoroutineContext()
         onProgress(ScanProgress("读取相册"))
+        ScanDiagnostics.stage(context, "query", 0, 0)
         val photos = query()
         val repeatedSizes = photos.groupingBy { it.bytes }.eachCount().filterValues { it > 1 }.keys
         val analyzed = mutableListOf<AnalyzedPhoto>()
@@ -64,6 +64,7 @@ class PhotoScanner(private val context: Context) {
         photos.forEachIndexed { i, photo ->
             cancellation.ensureActive()
             if (i % 10 == 0) onProgress(ScanProgress("核对文件内容", i, photos.size))
+            if (i % 25 == 0) ScanDiagnostics.stage(context, "hash", i, photos.size, photo)
             var digest: String? = null
             if (photo.bytes in repeatedSizes) {
                 try { digest = sha256(photo) } catch (_: IOException) { skipped.add(photo.uri) }
@@ -80,40 +81,28 @@ class PhotoScanner(private val context: Context) {
                 if (i % 5 == 0) onProgress(ScanProgress("分析照片画面", i, representatives.size))
                 val sorted = atom.sortedWith(DuplicateCore.qualityOrder)
                 val best = sorted.first()
-                val bitmap = if (best.photo.mime in STILL_FORMATS) decode(best.photo.uri, 256) else null
-                if (bitmap == null) {
+                ScanDiagnostics.stage(context, "visual", i, representatives.size, best.photo)
+                val visual = if (best.photo.mime in STILL_FORMATS) analyzeVisual(best.photo) else null
+                if (visual == null) {
                     // Animated/unsupported images still participate in byte-identical grouping.
                     if (best.photo.mime in STILL_FORMATS) skipped.add(best.photo.uri)
                     updated.addAll(atom)
                 } else {
-                    try {
-                        val square = Bitmap.createScaledBitmap(bitmap, 32, 32, true)
-                        val opaque = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
-                        Canvas(opaque).apply { drawColor(Color.WHITE); drawBitmap(square, 0f, 0f, null) }
-                        val pixels = IntArray(1024)
-                        opaque.getPixels(pixels, 0, 32, 0, 0, 32, 32)
-                        val fingerprint = DuplicateCore.fingerprint(pixels)
-                        opaque.recycle()
-                        if (square !== bitmap) square.recycle()
-                        updated.addAll(sorted.map { entry -> entry.copy(photo = entry.photo.copy(
-                            width = bitmap.width, height = bitmap.height), fingerprint = fingerprint) })
-                        // Keep source resolution for quality ordering, oriented to the decoded image.
-                        val start = updated.size - sorted.size
-                        sorted.forEachIndexed { offset, entry ->
-                            val sourceW = entry.photo.width
-                            val sourceH = entry.photo.height
-                            val swap = (sourceW > sourceH) != (bitmap.width > bitmap.height)
-                            updated[start + offset] = updated[start + offset].copy(photo = entry.photo.copy(
-                                width = if (swap) sourceH else sourceW, height = if (swap) sourceW else sourceH))
-                        }
-                    } finally { bitmap.recycle() }
+                    sorted.forEach { entry ->
+                        val swap = (entry.photo.width > entry.photo.height) != visual.landscape
+                        updated.add(entry.copy(photo = entry.photo.copy(
+                            width = if (swap) entry.photo.height else entry.photo.width,
+                            height = if (swap) entry.photo.width else entry.photo.height), fingerprint = visual.fingerprint))
+                    }
                 }
             }
             updated
         } else analyzed
         cancellation.ensureActive()
         onProgress(ScanProgress("整理重复分组"))
+        ScanDiagnostics.stage(context, "group", withVisual.size, withVisual.size)
         val groups = DuplicateCore.group(withVisual, mode, sensitivity) { cancellation.ensureActive() }
+        ScanDiagnostics.stage(context, "complete", photos.size, photos.size)
         return ScanResult(groups, photos.size, skipped.size)
     }
 
@@ -134,39 +123,30 @@ class PhotoScanner(private val context: Context) {
         return digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
     }
 
-    /** Uses an uncropped full frame; honors all eight EXIF rotation/mirror states. */
-    fun decode(uri: String, maxSide: Int): Bitmap? {
+    fun decode(uri: String, maxSide: Int): Bitmap? = decoder.decode(uri, maxSide)
+
+    private data class Visual(val fingerprint: Fingerprint, val landscape: Boolean)
+
+    private fun analyzeVisual(photo: Photo): Visual? = ImageReadGuard.read(
+        onFailure = { ScanDiagnostics.imageFailure(context, "fingerprint", it) }
+    ) {
+        val bitmap = decoder.decode(photo.uri, 192) ?: return@read null
+        var square: Bitmap? = null
+        var opaque: Bitmap? = null
         try {
-            val parsed = Uri.parse(uri)
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            resolver.openInputStream(parsed)?.use { BitmapFactory.decodeStream(it, null, options) }
-            if (options.outWidth <= 0 || options.outHeight <= 0) return null
-            var sample = 1
-            while (maxOf(options.outWidth, options.outHeight) / sample > maxSide * 2) sample *= 2
-            options.inJustDecodeBounds = false
-            options.inSampleSize = sample
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888
-            val bitmap = resolver.openInputStream(parsed)?.use { BitmapFactory.decodeStream(it, null, options) } ?: return null
-            val orientation = try { resolver.openInputStream(parsed)?.use { ExifInterface(it).getAttributeInt(
-                ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) } ?: 1 } catch (_: IOException) { 1 }
-            val matrix = Matrix().apply {
-                when (orientation) {
-                    2 -> setScale(-1f, 1f)
-                    3 -> setRotate(180f)
-                    4 -> setScale(1f, -1f)
-                    5 -> { setRotate(90f); postScale(-1f, 1f) }
-                    6 -> setRotate(90f)
-                    7 -> { setRotate(-90f); postScale(-1f, 1f) }
-                    8 -> setRotate(-90f)
-                }
-            }
-            if (matrix.isIdentity) return bitmap
-            val oriented = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-            if (oriented !== bitmap) bitmap.recycle()
-            return oriented
-        } catch (_: IOException) { return null }
-        catch (_: SecurityException) { return null }
-        catch (_: IllegalArgumentException) { return null }
+            val scaled = Bitmap.createScaledBitmap(bitmap, 32, 32, true)
+            square = scaled
+            val flattened = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+            opaque = flattened
+            Canvas(flattened).apply { drawColor(Color.WHITE); drawBitmap(scaled, 0f, 0f, null) }
+            val pixels = IntArray(1024)
+            flattened.getPixels(pixels, 0, 32, 0, 0, 32, 32)
+            Visual(DuplicateCore.fingerprint(pixels), bitmap.width > bitmap.height)
+        } finally {
+            opaque?.recycle()
+            if (square !== bitmap) square?.recycle()
+            bitmap.recycle()
+        }
     }
 
     companion object {

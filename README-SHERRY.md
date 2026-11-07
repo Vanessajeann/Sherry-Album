@@ -1,4 +1,7 @@
-# Sherry 相册管家 0.1.0-test1
+# Sherry 相册管家 0.1.0-test2
+
+本次版本针对画面分析阶段的图片解码/内存异常增加防护。没有用户手机堆栈时，不把候选原因当作已证实根因。完整变更和复测范围见 `RELEASE-NOTES.md`。
+应用内“导出诊断”可获取本应用错误记录和 Android 的历史退出原因；报告仅在用户选择导出时生成，不含图片内容，不自动发送。
 
 基于 [SiRan-Dev/PhotoTimeFixer](https://github.com/SiRan-Dev/PhotoTimeFixer) 的 Android 二次开发版本。
 原项目基线：`15948a12185e3ac8a27671a8c3512a094f734dd7`，GPL-3.0-or-later。

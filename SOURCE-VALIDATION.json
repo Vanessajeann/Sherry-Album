@@ -8,7 +8,7 @@
     {
       "check": "All XML resources parse",
       "passed": true,
-      "detail": "20"
+      "detail": "23"
     },
     {
       "check": "Independent launcher identity",
@@ -33,7 +33,7 @@
     {
       "check": "Kotlin namespace consistent",
       "passed": true,
-      "detail": "14"
+      "detail": "20"
     },
     {
       "check": "Text is valid UTF-8 without replacement characters",
@@ -56,5 +56,5 @@
       "detail": ""
     }
   ],
-  "core_sha256": "7720e0e0928094ed9d6e5f3517f503805da656312c218566dbf99af8daa15212"
+  "core_sha256": "6cd545e6ba77fc460532776e96b654fa473234d02929efa1f196b440ab81d78a"
 }
