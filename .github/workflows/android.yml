@@ -59,17 +59,25 @@ jobs:
           heap-size: 128M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: gradle --no-daemon connectedDebugAndroidTest
+          script: |
+            gradle --no-daemon connectedDebugAndroidTest
+            adb shell am start -n io.github.vanessajeann.sherry.album/.AlbumActivity
+            sleep 4
+            adb exec-out screencap -p > /tmp/sherry-home.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appearance-preview
+          path: /tmp/sherry-home.png
       - name: Package
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/SherryAlbum-0.1.0-test4.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dist/SherryAlbum-0.1.0-test5.apk
           git rev-parse HEAD > dist/BUILD-COMMIT.txt
           cd dist
-          sha256sum SherryAlbum-0.1.0-test4.apk > SHA256SUMS.txt
+          sha256sum SherryAlbum-0.1.0-test5.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: SherryAlbum-0.1.0-test4
+          name: SherryAlbum-0.1.0-test5
           path: dist/
       - uses: actions/upload-artifact@v4
         if: always()

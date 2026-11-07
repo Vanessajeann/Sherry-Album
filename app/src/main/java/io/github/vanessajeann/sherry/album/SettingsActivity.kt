@@ -23,6 +23,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -131,7 +132,7 @@ class SettingsActivity : ComponentActivity() {
 
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface
+            color = androidx.compose.ui.graphics.Color.Transparent
         ) {
             Column(
                 modifier = Modifier
@@ -205,6 +206,7 @@ class SettingsActivity : ComponentActivity() {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
+                    border = BorderStroke(1.dp, GlassEdge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
@@ -328,6 +330,7 @@ class SettingsActivity : ComponentActivity() {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
+                    border = BorderStroke(1.dp, GlassEdge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
@@ -379,6 +382,7 @@ class SettingsActivity : ComponentActivity() {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
+                    border = BorderStroke(1.dp, GlassEdge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
@@ -415,6 +419,7 @@ class SettingsActivity : ComponentActivity() {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
+                    border = BorderStroke(1.dp, GlassEdge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )

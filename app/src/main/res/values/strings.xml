@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Sherry 相册管家</string>
+    <string name="app_name">Sherry Album</string>
 
     <!-- Settings page -->
     <string name="back">Back</string>

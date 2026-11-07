@@ -20,6 +20,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -117,11 +118,11 @@ class AlbumActivity : ComponentActivity() {
                 } catch (_: Exception) { model.systemFailed("系统未能打开回收站确认窗口，照片未由本应用直接删除") }
             }
         }
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent) {
             Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Sherry 相册管家", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text("Sherry Album", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text("照片和视频去重 · 时间修复", style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -132,27 +133,28 @@ class AlbumActivity : ComponentActivity() {
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)) {
                     item {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = GlassPanel), border = BorderStroke(1.dp, GlassEdge)) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("选择媒体", style = MaterialTheme.typography.titleMedium)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(selected = model.mediaType == MediaType.PHOTO, enabled = model.canChange,
+                                    FilterChip(colors = glassChipColors(), selected = model.mediaType == MediaType.PHOTO, enabled = model.canChange,
                                         onClick = { model.configureMedia(MediaType.PHOTO); filter = "全部" }, label = { Text("照片去重") })
-                                    FilterChip(selected = model.mediaType == MediaType.VIDEO, enabled = model.canChange,
+                                    FilterChip(colors = glassChipColors(), selected = model.mediaType == MediaType.VIDEO, enabled = model.canChange,
                                         onClick = { model.configureMedia(MediaType.VIDEO); filter = "全部" }, label = { Text("视频去重") })
                                 }
                                 if (model.mediaType == MediaType.PHOTO) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(selected = model.mode == ScanMode.EXACT, enabled = model.canChange,
+                                    FilterChip(colors = glassChipColors(), selected = model.mode == ScanMode.EXACT, enabled = model.canChange,
                                         onClick = { model.configure(ScanMode.EXACT, model.sensitivity) }, label = { Text("完全重复") })
-                                    FilterChip(selected = model.mode == ScanMode.SIMILAR, enabled = model.canChange,
+                                    FilterChip(colors = glassChipColors(), selected = model.mode == ScanMode.SIMILAR, enabled = model.canChange,
                                         onClick = { model.configure(ScanMode.SIMILAR, model.sensitivity) }, label = { Text("包含相似照片") })
                                 }
                                 if (model.mode == ScanMode.SIMILAR) {
                                     Text("相似识别强度", style = MaterialTheme.typography.labelMedium)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Sensitivity.entries.forEach { sensitivity ->
-                                            FilterChip(selected = model.sensitivity == sensitivity, enabled = model.canChange,
+                                            FilterChip(colors = glassChipColors(), selected = model.sensitivity == sensitivity, enabled = model.canChange,
                                                 onClick = { model.configure(model.mode, sensitivity) }, label = {
                                                     Text(when(sensitivity) { Sensitivity.STRICT -> "严格"; Sensitivity.BALANCED -> "均衡"; Sensitivity.LOOSE -> "宽松" })
                                                 })
@@ -166,7 +168,7 @@ class AlbumActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall)
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(onClick = { scanWithPermission() }, enabled = model.canChange) {
+                                    Button(onClick = { scanWithPermission() }, enabled = model.canChange, colors = glassButtonColors(), border = BorderStroke(1.dp, GlassEdge)) {
                                         Text(if (model.scanned) "重新扫描" else "开始扫描")
                                     }
                                     if (model.busy && model.plan == null) TextButton(onClick = { model.cancelScan() }) { Text("停止扫描") }
@@ -191,7 +193,7 @@ class AlbumActivity : ComponentActivity() {
                         item {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 (if (model.mediaType == MediaType.VIDEO) listOf("全部", "完全重复") else listOf("全部", "完全重复", "相似照片")).forEach { option ->
-                                    FilterChip(selected = filter == option, onClick = { filter = option }, label = { Text(option) })
+                                    FilterChip(colors = glassChipColors(), selected = filter == option, onClick = { filter = option }, label = { Text(option) })
                                 }
                             }
                             Row {
@@ -211,7 +213,7 @@ class AlbumActivity : ComponentActivity() {
                         Text(if (model.mediaType == MediaType.VIDEO) "没有发现完全相同的视频。" else "没有发现符合当前条件的重复照片。你可以尝试相似扫描或调整识别强度。", Modifier.padding(vertical = 24.dp))
                     }
                     item {
-                        Text("基于 SiRan-Dev / PhotoTimeFixer，遵循 GPL-3.0-or-later。相似识别为本应用实现，未使用 Apple 或爱思的私有算法。",
+                        Text("基于 SiRan-Dev / PhotoTimeFixer，遵循 GPL-3.0-or-later。",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         TextButton(onClick = { startActivity(Intent(Intent.ACTION_VIEW,
                             Uri.parse("https://github.com/SiRan-Dev/PhotoTimeFixer"))) }) { Text("原项目与开源声明") }
@@ -223,7 +225,7 @@ class AlbumActivity : ComponentActivity() {
                         Text("已选 ${model.selected.size} 个 · ${size(model.selectedBytes)}", style = MaterialTheme.typography.titleSmall)
                         Text("每组至少保留一个", style = MaterialTheme.typography.bodySmall)
                     }
-                    Button(enabled = model.canChange && model.selected.isNotEmpty(), onClick = {
+                    Button(enabled = model.canChange && model.selected.isNotEmpty(), colors = glassButtonColors(), border = BorderStroke(1.dp, GlassEdge), onClick = {
                         if (Build.VERSION.SDK_INT < 30) model.showMessage("Android 11 以下请点开文件，在系统相册中手动清理；本应用不直接永久删除文件")
                         else confirm = true
                     }) { Text(if (model.plan != null) "等待系统确认" else "移入回收站") }
@@ -238,7 +240,8 @@ class AlbumActivity : ComponentActivity() {
 
     @Composable
     private fun GroupHeader(group: DuplicateGroup) {
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = GlassPanel), border = BorderStroke(1.dp, GlassEdge)) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${if (group.kind == GroupKind.EXACT) "完全重复" else "相似照片 · 请预览"} · ${group.photos.size} ${if (group.photos.first().isVideo) "段" else "张"}",
                     style = MaterialTheme.typography.titleMedium)
@@ -249,7 +252,7 @@ class AlbumActivity : ComponentActivity() {
 
     @Composable
     private fun PhotoRow(group: DuplicateGroup, i: Int, photo: Photo) {
-        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+        Surface(shape = RoundedCornerShape(16.dp), color = GlassPanel, border = BorderStroke(1.dp, GlassEdge)) {
             Box(Modifier.padding(8.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         PhotoThumbnail(photo)

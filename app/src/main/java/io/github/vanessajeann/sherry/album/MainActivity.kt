@@ -805,7 +805,7 @@ class MainActivity : ComponentActivity() {
 
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface
+            color = androidx.compose.ui.graphics.Color.Transparent
         ) {
             Column(
                 modifier = Modifier
@@ -891,6 +891,7 @@ class MainActivity : ComponentActivity() {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         FilledTonalButton(
+                            colors = glassTonalButtonColors(),
                             onClick = { checkPermissionsAndScan() },
                             enabled = !scanning,
                             modifier = Modifier
@@ -928,6 +929,7 @@ class MainActivity : ComponentActivity() {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         FilledTonalButton(
+                            colors = glassTonalButtonColors(),
                             onClick = { toggleSelectAll() },
                             modifier = Modifier
                                 .weight(1f)
@@ -936,6 +938,7 @@ class MainActivity : ComponentActivity() {
                             Text(stringResource(R.string.select_all_abnormal))
                         }
                         Button(
+                            colors = glassButtonColors(),
                             onClick = { fixSelected() },
                             enabled = !fixing,
                             modifier = Modifier

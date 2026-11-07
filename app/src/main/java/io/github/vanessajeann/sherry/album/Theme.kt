@@ -1,80 +1,94 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 SiRan-Dev
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
  */
-
 package io.github.vanessajeann.sherry.album
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
-/** 浅色：蓝灰冷色系（非紫），与旧 values/colors.xml 一致 */
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF0B57D0),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFD3E3FD),
-    onPrimaryContainer = Color(0xFF041E49),
-    secondary = Color(0xFF526070),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFD6E4FF),
-    onSecondaryContainer = Color(0xFF0E2947),
-    tertiary = Color(0xFF00696E),
-    onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFF9CF1F4),
-    onTertiaryContainer = Color(0xFF002022),
-    error = Color(0xFFBA1A1A),
-    surface = Color(0xFFF8F9FC),
-    onSurface = Color(0xFF1A1C1F),
-    surfaceVariant = Color(0xFFE1E2E8),
-    onSurfaceVariant = Color(0xFF44474F),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF2F3F7),
-    surfaceContainer = Color(0xFFEDEEF3),
-    surfaceContainerHigh = Color(0xFFE7E8EE),
-    surfaceContainerHighest = Color(0xFFE1E2E8),
-    outline = Color(0xFF74777F),
-    outlineVariant = Color(0xFFC4C6D0),
+// The translucent surfaces are composited over the app's own aurora background.
+internal val GlassPanel = Color(0xB3233850)
+internal val GlassEdge = Color(0x6673D7ED)
+private val GlassColors = darkColorScheme(
+    primary = Color(0xFF9CEBFF),
+    onPrimary = Color(0xFF071F30),
+    primaryContainer = Color(0x99355C78),
+    onPrimaryContainer = Color(0xFFE7FAFF),
+    secondary = Color(0xFFF7ACEB),
+    onSecondary = Color(0xFF32172E),
+    secondaryContainer = Color(0x995C3F6D),
+    onSecondaryContainer = Color(0xFFFFE8FB),
+    tertiary = Color(0xFFA6F7E6),
+    surface = Color(0xFF10192C),
+    onSurface = Color(0xFFF2F8FF),
+    surfaceVariant = Color(0xA63B536C),
+    onSurfaceVariant = Color(0xFFC5D6E9),
+    surfaceContainerLowest = Color(0xFF11192B),
+    surfaceContainerLow = Color(0xB31C2B41),
+    surfaceContainer = GlassPanel,
+    surfaceContainerHigh = Color(0xFF25364E),
+    surfaceContainerHighest = Color(0xFF30455E),
+    outline = Color(0xFF88A9C2),
+    outlineVariant = Color(0x6688B2CA),
+    error = Color(0xFFFFB4AB),
 )
 
-/** 深色：蓝灰冷色系，与旧 values-night/colors.xml 一致 */
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFFAAC7FF),
-    onPrimary = Color(0xFF062E6F),
-    primaryContainer = Color(0xFF1D439B),
-    onPrimaryContainer = Color(0xFFD6E3FF),
-    secondary = Color(0xFFB7C9E4),
-    onSecondary = Color(0xFF22364B),
-    secondaryContainer = Color(0xFF3A4B62),
-    onSecondaryContainer = Color(0xFFD6E4FF),
-    error = Color(0xFFF2B8B5),
+@Composable
+internal fun glassButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = Color(0xB52A7188),
+    contentColor = Color(0xFFF4FCFF),
+    disabledContainerColor = Color(0x66415768),
+    disabledContentColor = Color(0xFF9CACBC),
 )
 
-/**
- * 应用主题：Android 12+ 动态取色，低版本回退到上面的蓝灰配色。
- */
+@Composable
+internal fun glassTonalButtonColors() = ButtonDefaults.filledTonalButtonColors(
+    containerColor = Color(0x99435F7A),
+    contentColor = Color(0xFFF4FCFF),
+    disabledContainerColor = Color(0x55415768),
+    disabledContentColor = Color(0xFF9CACBC),
+)
+
+@Composable
+internal fun glassChipColors() = FilterChipDefaults.filterChipColors(
+    containerColor = Color(0x66364C66),
+    labelColor = Color(0xFFDFECF6),
+    selectedContainerColor = Color(0xAA2D7890),
+    selectedLabelColor = Color(0xFFFFFFFF),
+    disabledContainerColor = Color(0x33415768),
+    disabledLabelColor = Color(0xFF9CACBC),
+)
+
 @Composable
 fun PhotoTimeFixerTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val colorScheme = when {
-        Build.VERSION.SDK_INT >= 31 -> {
-            val context = LocalContext.current
-            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    MaterialTheme(colorScheme = GlassColors) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF09111F))) {
+            Canvas(Modifier.fillMaxSize()) {
+                drawRect(brush = Brush.verticalGradient(listOf(Color(0xFF101C35), Color(0xFF0D1428), Color(0xFF121A2C))))
+                val scale = size.maxDimension
+                drawCircle(brush = Brush.radialGradient(listOf(Color(0x994C318F), Color.Transparent),
+                    center = Offset(size.width * 0.84f, size.height * 0.17f), radius = scale * 0.5f),
+                    radius = scale * 0.5f, center = Offset(size.width * 0.84f, size.height * 0.17f))
+                drawCircle(brush = Brush.radialGradient(listOf(Color(0x88316986), Color.Transparent),
+                    center = Offset(size.width * 0.02f, size.height * 0.56f), radius = scale * 0.48f),
+                    radius = scale * 0.48f, center = Offset(size.width * 0.02f, size.height * 0.56f))
+                drawCircle(brush = Brush.radialGradient(listOf(Color(0x66572F72), Color.Transparent),
+                    center = Offset(size.width * 0.9f, size.height * 0.91f), radius = scale * 0.42f),
+                    radius = scale * 0.42f, center = Offset(size.width * 0.9f, size.height * 0.91f))
+            }
+            content()
         }
-        dark -> DarkColors
-        else -> LightColors
     }
-    MaterialTheme(colorScheme = colorScheme, content = content)
 }
