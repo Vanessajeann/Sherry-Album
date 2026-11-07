@@ -118,7 +118,8 @@ class AlbumActivity : ComponentActivity() {
                 } catch (_: Exception) { model.systemFailed("系统未能打开回收站确认窗口，照片未由本应用直接删除") }
             }
         }
-        Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent) {
+        Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface) {
             Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {

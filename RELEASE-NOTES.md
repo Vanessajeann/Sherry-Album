@@ -1,4 +1,4 @@
-## Sherry Album 0.1.0-test5
+## Sherry Album 0.1.0-test6
 
 - 全新赛博霓虹风格应用图标，应用显示名称调整为 Sherry Album。
 - 照片与视频去重、时间修复及设置页面采用液态玻璃风格，包括卡片、按钮与选项。
